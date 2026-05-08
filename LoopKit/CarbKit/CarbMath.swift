@@ -248,14 +248,127 @@ public struct PiecewiseLinearAbsorption: CarbAbsorptionComputable {
     }
 }
 
+// MARK: - CUSTOM (rdeboer180): Delayed Second-Wave Dessert (12h)
+// Tail-heavy piecewise-linear cumulative-absorption curve calibrated to the
+// user's observed Friday/Saturday late-evening high-fat/fiber meal pattern.
+// Peak absorption rate is centered at hours 8-10 (percentTime 0.667–0.833).
+//
+// This model is NOT exposed as a global CarbAbsorptionModel option. It is
+// selected per-entry by `CarbEntry.resolvedAbsorptionModel(default:)` when an
+// entry's `foodType` contains the dessert marker. See `dessertFoodTypeMarker`.
+//
+// Derivation: knees are placed at hour boundaries within a 12h absorption
+// time, with cumulative percent absorbed at each boundary derived from the
+// user's bucket distribution (sums to 100%). Within a segment the curve is
+// linear, so rate is constant per segment.
+//
+// Revert: delete this struct + the CarbEntry.resolvedAbsorptionModel
+// extension + the dessert-model swap inside the four CarbEntry math methods
+// + the CarbStatus.foodType delegate + the foodType requirement on the
+// CarbEntry protocol.
+struct DelayedSecondWaveDessertAbsorption: CarbAbsorptionComputable {
+
+    /// Knees as (percentTime, cumulativePercentAbsorbed). Both monotone non-decreasing.
+    fileprivate static let knees: [(t: Double, p: Double)] = [
+        (0.0,        0.00),  // hour  0
+        (1.0 / 12.0, 0.04),  // hour  1
+        (2.0 / 12.0, 0.09),  // hour  2
+        (3.0 / 12.0, 0.15),  // hour  3
+        (4.0 / 12.0, 0.24),  // hour  4
+        (5.0 / 12.0, 0.34),  // hour  5
+        (6.0 / 12.0, 0.43),  // hour  6
+        (8.0 / 12.0, 0.65),  // hour  8
+        (10.0 / 12.0, 0.92), // hour 10
+        (1.0,        1.00)   // hour 12
+    ]
+
+    public init() {}
+
+    public func percentAbsorptionAtPercentTime(_ percentTime: Double) -> Double {
+        if percentTime <= 0 { return 0 }
+        if percentTime >= 1 { return 1 }
+        let knees = Self.knees
+        for i in 1..<knees.count {
+            let curr = knees[i]
+            if percentTime <= curr.t {
+                let prev = knees[i - 1]
+                let span = curr.t - prev.t
+                guard span > 0 else { return prev.p }
+                let frac = (percentTime - prev.t) / span
+                return prev.p + frac * (curr.p - prev.p)
+            }
+        }
+        return 1
+    }
+
+    public func percentTimeAtPercentAbsorption(_ percentAbsorption: Double) -> Double {
+        if percentAbsorption <= 0 { return 0 }
+        if percentAbsorption >= 1 { return 1 }
+        let knees = Self.knees
+        for i in 1..<knees.count {
+            let curr = knees[i]
+            if percentAbsorption <= curr.p {
+                let prev = knees[i - 1]
+                let span = curr.p - prev.p
+                guard span > 0 else { return prev.t }
+                let frac = (percentAbsorption - prev.p) / span
+                return prev.t + frac * (curr.t - prev.t)
+            }
+        }
+        return 1
+    }
+
+    public func percentRateAtPercentTime(_ percentTime: Double) -> Double {
+        if percentTime <= 0 || percentTime >= 1 { return 0 }
+        let knees = Self.knees
+        for i in 1..<knees.count {
+            let curr = knees[i]
+            if percentTime < curr.t {
+                let prev = knees[i - 1]
+                let span = curr.t - prev.t
+                guard span > 0 else { return 0 }
+                return (curr.p - prev.p) / span
+            }
+        }
+        return 0
+    }
+}
+
+// CUSTOM (rdeboer180): per-entry absorption model resolution.
+//
+// `dessertFoodTypeMarker` is the substring written into `CarbEntry.foodType`
+// by the 🌙 icon in FoodTypeRow when tapped. Marker presence triggers the
+// dessert curve for that entry only. The global model (Parabolic in this
+// fork) continues to apply to every other entry.
+//
+// We use `contains(...)` so users can append free-text after the marker
+// (e.g. "🌙12h birthday cake") without breaking the trigger.
+public let dessertFoodTypeMarker = "🌙12h"
+
+extension CarbEntry {
+    // CUSTOM (rdeboer180): swap absorption model for entries marked as dessert.
+    // Returns the dessert curve only when foodType contains the marker; otherwise
+    // returns the caller-provided default (always settings.absorptionModel today).
+    // Access: `internal` so CarbStatus's dynamic-absorption pipeline can use it
+    // for the direct-model-call branches (no-observation fallback paths).
+    func resolvedAbsorptionModel(default defaultModel: CarbAbsorptionComputable) -> CarbAbsorptionComputable {
+        if foodType?.contains(dessertFoodTypeMarker) == true {
+            return DelayedSecondWaveDessertAbsorption()
+        }
+        return defaultModel
+    }
+}
+
 extension CarbEntry {
     
     func carbsOnBoard(at date: Date, defaultAbsorptionTime: TimeInterval, delay: TimeInterval, absorptionModel: CarbAbsorptionComputable) -> Double {
+        // CUSTOM (rdeboer180): per-entry dessert-curve override.
+        let model = resolvedAbsorptionModel(default: absorptionModel)
         let time = date.timeIntervalSince(startDate)
         let value: Double
 
         if time >= 0 {
-            value = absorptionModel.unabsorbedCarbs(of: quantity.doubleValue(for: HKUnit.gram()), atTime: time - delay, absorptionTime: absorptionTime ?? defaultAbsorptionTime)
+            value = model.unabsorbedCarbs(of: quantity.doubleValue(for: HKUnit.gram()), atTime: time - delay, absorptionTime: absorptionTime ?? defaultAbsorptionTime)
         } else {
             value = 0
         }
@@ -270,9 +383,11 @@ extension CarbEntry {
         delay: TimeInterval,
         absorptionModel: CarbAbsorptionComputable
     ) -> Double {
+        // CUSTOM (rdeboer180): per-entry dessert-curve override.
+        let model = resolvedAbsorptionModel(default: absorptionModel)
         let time = date.timeIntervalSince(startDate)
 
-        return absorptionModel.absorbedCarbs(
+        return model.absorbedCarbs(
             of: quantity.doubleValue(for: .gram()),
             atTime: time - delay,
             absorptionTime: absorptionTime
@@ -288,13 +403,17 @@ extension CarbEntry {
         delay: TimeInterval,
         absorptionModel: CarbAbsorptionComputable
     ) -> Double {
+        // absorbedCarbs already applies the per-entry override; pass the default
+        // through unchanged so the swap happens exactly once.
         return insulinSensitivity.doubleValue(for: HKUnit.milligramsPerDeciliter) / carbRatio.doubleValue(for: .gram()) * absorbedCarbs(at: date, absorptionTime: absorptionTime ?? defaultAbsorptionTime, delay: delay, absorptionModel: absorptionModel)
     }
 
     fileprivate func estimatedAbsorptionTime(forAbsorbedCarbs carbs: Double, at date: Date, absorptionModel: CarbAbsorptionComputable) -> TimeInterval {
+        // CUSTOM (rdeboer180): per-entry dessert-curve override.
+        let model = resolvedAbsorptionModel(default: absorptionModel)
         let time = date.timeIntervalSince(startDate)
 
-        return max(time, absorptionModel.absorptionTime(forPercentAbsorption: carbs / quantity.doubleValue(for: .gram()), atTime: time))
+        return max(time, model.absorptionTime(forPercentAbsorption: carbs / quantity.doubleValue(for: .gram()), atTime: time))
     }
 }
 
@@ -717,7 +836,11 @@ fileprivate class CarbStatusBuilder<T: CarbEntry> {
         self.maxAbsorptionTime = maxAbsorptionTime
         self.delay = delay
         self.observedEffect = initialObservedEffect
-        self.absorptionModel = absorptionModel
+        // CUSTOM (rdeboer180): per-entry dessert-curve override, applied once at
+        // builder init so all internal computations (minPredictedGrams,
+        // timeToAbsorbObservedCarbs, dynamicAbsorptionTime, percentRateAtPercentTime)
+        // see the dessert curve for marked entries.
+        self.absorptionModel = entry.resolvedAbsorptionModel(default: absorptionModel)
         self.adaptiveAbsorptionRateEnabled = adaptiveAbsorptionRateEnabled
         self.adaptiveRateStandbyIntervalFraction = adaptiveRateStandbyIntervalFraction
         self.entryGrams = entry.quantity.doubleValue(for: carbUnit)

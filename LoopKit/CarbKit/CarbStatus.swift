@@ -37,12 +37,22 @@ extension CarbStatus: CarbEntry {
     public var absorptionTime: TimeInterval? {
         return absorption?.estimatedDate.duration ?? entry.absorptionTime
     }
+
+    // CUSTOM (rdeboer180): delegate to wrapped entry so the dessert-model marker
+    // travels through the dynamic-absorption pipeline.
+    public var foodType: String? {
+        return entry.foodType
+    }
 }
 
 
 extension CarbStatus {
     
     func dynamicCarbsOnBoard(at date: Date, defaultAbsorptionTime: TimeInterval, delay: TimeInterval, delta: TimeInterval, absorptionModel: CarbAbsorptionComputable) -> Double {
+        // CUSTOM (rdeboer180): per-entry dessert-curve override for the direct-
+        // model-call branches below. The `entry.carbsOnBoard` fallback path
+        // already swaps via the CarbEntry extension.
+        let model = entry.resolvedAbsorptionModel(default: absorptionModel)
         guard date >= startDate - delta,
             let absorption = absorption
         else {
@@ -57,7 +67,7 @@ extension CarbStatus {
             let total = absorption.total.doubleValue(for: unit)
             let time = date.timeIntervalSince(startDate) - delay
             let absorptionTime = absorption.estimatedDate.duration
-            return absorptionModel.unabsorbedCarbs(of: total, atTime: time, absorptionTime: absorptionTime)
+            return model.unabsorbedCarbs(of: total, atTime: time, absorptionTime: absorptionTime)
         }
 
         guard date <= observationEnd else {
@@ -65,7 +75,7 @@ extension CarbStatus {
             let effectiveTime = date.timeIntervalSince(observationEnd) + absorption.timeToAbsorbObservedCarbs
             let effectiveAbsorptionTime = absorption.timeToAbsorbObservedCarbs + absorption.estimatedTimeRemaining
             let total = absorption.total.doubleValue(for: unit)
-            let unabsorbedAtEffectiveTime = absorptionModel.unabsorbedCarbs(of: total, atTime: effectiveTime, absorptionTime: effectiveAbsorptionTime)
+            let unabsorbedAtEffectiveTime = model.unabsorbedCarbs(of: total, atTime: effectiveTime, absorptionTime: effectiveAbsorptionTime)
             let unabsorbedCarbs = max(unabsorbedAtEffectiveTime, 0.0)
             return unabsorbedCarbs
         }
@@ -79,6 +89,10 @@ extension CarbStatus {
     }
 
     func dynamicAbsorbedCarbs(at date: Date, absorptionTime: TimeInterval, delay: TimeInterval, delta: TimeInterval, absorptionModel: CarbAbsorptionComputable) -> Double {
+        // CUSTOM (rdeboer180): per-entry dessert-curve override for the direct-
+        // model-call branches below. The `entry.absorbedCarbs` fallback path
+        // already swaps via the CarbEntry extension.
+        let model = entry.resolvedAbsorptionModel(default: absorptionModel)
         guard date >= startDate,
             let absorption = absorption
         else {
@@ -93,7 +107,7 @@ extension CarbStatus {
             let total = absorption.total.doubleValue(for: unit)
             let time = date.timeIntervalSince(startDate) - delay
             let absorptionTime = absorption.estimatedDate.duration
-            return absorptionModel.absorbedCarbs(of: total, atTime: time, absorptionTime: absorptionTime)
+            return model.absorbedCarbs(of: total, atTime: time, absorptionTime: absorptionTime)
         }
 
         guard date <= observationEnd else {
@@ -101,7 +115,7 @@ extension CarbStatus {
             let effectiveTime = date.timeIntervalSince(observationEnd) + absorption.timeToAbsorbObservedCarbs
             let effectiveAbsorptionTime = absorption.timeToAbsorbObservedCarbs + absorption.estimatedTimeRemaining
             let total = absorption.total.doubleValue(for: unit)
-            let absorbedAtEffectiveTime = absorptionModel.absorbedCarbs(of: total, atTime: effectiveTime, absorptionTime: effectiveAbsorptionTime)
+            let absorbedAtEffectiveTime = model.absorbedCarbs(of: total, atTime: effectiveTime, absorptionTime: effectiveAbsorptionTime)
             let absorbedCarbs = min(absorbedAtEffectiveTime, total)
             return absorbedCarbs
         }

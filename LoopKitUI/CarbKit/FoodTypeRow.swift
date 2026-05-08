@@ -42,9 +42,9 @@ public struct FoodTypeRow: View {
         HStack {
             Text("Food Type")
                 .foregroundColor(.primary)
-            
+
             Spacer()
-            
+
             if usesCustomFoodType {
                 RowEmojiTextField(text: $foodType, isFocused: $isFocused, emojiType: .food, didSelectItemInSection: didSelectEmojiInSection)
                     .onTapGesture {
@@ -68,10 +68,24 @@ public struct FoodTypeRow: View {
                                 switch option {
                                 case .other:
                                     rowTapped()
+                                case .dessert:
+                                    // CUSTOM (rdeboer180): force 12h absorption AND write the
+                                    // dessert marker into foodType so the math layer swaps in
+                                    // DelayedSecondWaveDessertAbsorption for this entry only.
+                                    selectedDefaultAbsorptionTimeEmoji = option.emoji
+                                    selectedEmojiIndex = index
+                                    absorptionTime = .hours(12)
+                                    foodType = dessertFoodTypeMarker
                                 default:
                                     selectedDefaultAbsorptionTimeEmoji = option.emoji
                                     selectedEmojiIndex = index
                                     absorptionTime = orderedAbsorptionTimes[index]
+                                    // CUSTOM (rdeboer180): switching away from the moon icon
+                                    // strips any previously-set dessert marker so the dessert
+                                    // curve does not silently apply to a non-dessert preset.
+                                    if foodType.contains(dessertFoodTypeMarker) {
+                                        foodType = foodType.replacingOccurrences(of: dessertFoodTypeMarker, with: "")
+                                    }
                                 }
                             }
                     }
@@ -111,8 +125,11 @@ fileprivate enum FoodEmojiShortcut {
     case fast(emoji: String)
     case medium(emoji: String)
     case slow(emoji: String)
+    // CUSTOM (rdeboer180): late-evening high-fat/fiber dessert preset.
+    // Forces 12h absorption + dessert-curve marker; see body switch for details.
+    case dessert(emoji: String)
     case other
-    
+
     var emoji: String {
         switch self {
         case .fast(emoji: let emoji):
@@ -121,15 +138,19 @@ fileprivate enum FoodEmojiShortcut {
             return emoji
         case .slow(emoji: let emoji):
             return emoji
+        case .dessert(emoji: let emoji):
+            return emoji
         case .other:
             return "🍽️"
         }
     }
-    
+
     static let all: [FoodEmojiShortcut] = [
         .fast(emoji: "🍭"),
         .medium(emoji: "🌮"),
         .slow(emoji: "🍕"),
+        // CUSTOM (rdeboer180): 4th preset, placed after slow per user spec.
+        .dessert(emoji: "🌙"),
         .other
     ]
 }
