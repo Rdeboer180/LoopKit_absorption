@@ -10,7 +10,11 @@ import Foundation
 import HealthKit
 
 public struct CarbMath {
-    public static let maximumAbsorptionTimeInterval: TimeInterval = .hours(10)
+    // CUSTOM (rdeboer180): raised 10h -> 12h to support late-evening high-fat/fiber
+    // dessert entries (Friday/Saturday recurring meal). Required because the
+    // dynamic-absorption clamp and LoopAlgorithm history window read this constant.
+    // Revert: restore `.hours(10)`.
+    public static let maximumAbsorptionTimeInterval: TimeInterval = .hours(12)
     public static let defaultAbsorptionTime: TimeInterval = .hours(3)
     public static let defaultAbsorptionTimeOverrun: Double = 1.5
     public static let defaultEffectDelay: TimeInterval = .minutes(10)
