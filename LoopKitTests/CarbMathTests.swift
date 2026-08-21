@@ -1049,6 +1049,14 @@ final class DelayedSecondWaveDessertAbsorptionTests: XCTestCase {
         let resolved = entry.resolvedAbsorptionModel(default: ParabolicAbsorption())
         XCTAssertTrue(resolved is DelayedSecondWaveDessertAbsorption)
     }
+
+    func testResolvedAbsorptionModelStillHonoursLegacyMoonMarker() {
+        // Entries written by builds before the 🥜 rename carry 🌙12h and must
+        // keep resolving to the dessert curve.
+        let entry = StubDessertCarbEntry(foodType: "\(legacyDessertFoodTypeMarker) birthday cake")
+        let resolved = entry.resolvedAbsorptionModel(default: ParabolicAbsorption())
+        XCTAssertTrue(resolved is DelayedSecondWaveDessertAbsorption)
+    }
 }
 
 private struct StubDessertCarbEntry: CarbEntry {
@@ -1165,7 +1173,7 @@ final class LongTailHeavyMealAbsorptionTests: XCTestCase {
     }
 
     func testResolvedAbsorptionModelReturnsDefaultWithoutMarker() {
-        let entry = StubHeavyCarbEntry(foodType: "steak dinner")
+        let entry = StubHeavyCarbEntry(foodType: "lentil stew dinner")
         let resolved = entry.resolvedAbsorptionModel(default: ParabolicAbsorption())
         XCTAssertTrue(resolved is ParabolicAbsorption)
     }

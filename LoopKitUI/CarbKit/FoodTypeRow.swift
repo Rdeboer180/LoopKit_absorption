@@ -92,10 +92,11 @@ public struct FoodTypeRow: View {
                                     selectedDefaultAbsorptionTimeEmoji = option.emoji
                                     selectedEmojiIndex = index
                                     absorptionTime = orderedAbsorptionTimes[index]
-                                    // CUSTOM (rdeboer180): switching away from the moon/steak
-                                    // icons strips any previously-set curve marker so a custom
-                                    // curve does not silently apply to a non-marked preset.
-                                    for marker in [dessertFoodTypeMarker, heavyFoodTypeMarker] where foodType.contains(marker) {
+                                    // CUSTOM (rdeboer180): switching away from the peanut/bowl
+                                    // icons strips any previously-set curve marker (legacy 🌙
+                                    // included) so a custom curve does not silently apply to a
+                                    // non-marked preset.
+                                    for marker in [dessertFoodTypeMarker, legacyDessertFoodTypeMarker, heavyFoodTypeMarker] where foodType.contains(marker) {
                                         foodType = foodType.replacingOccurrences(of: marker, with: "")
                                     }
                                 }
@@ -168,10 +169,12 @@ fileprivate enum FoodEmojiShortcut {
         .medium(emoji: "🌮"),
         .slow(emoji: "🍕"),
         // CUSTOM (rdeboer180): 4th + 5th presets, placed after slow. Heavy
-        // (🥩 8h long-tail) before dessert (🌙 12h second-wave); both are
-        // individual per-entry curve cases resolved by foodType marker.
-        .heavy(emoji: "🥩"),
-        .dessert(emoji: "🌙"),
+        // (🍲 8h long-tail — the plates previously entered at 5-6h) before
+        // dessert (🥜 12h second-wave, formerly 🌙); both are individual
+        // per-entry curve cases resolved by foodType marker. Vegetarian
+        // icon set per user spec.
+        .heavy(emoji: "🍲"),
+        .dessert(emoji: "🥜"),
         .other
     ]
 }

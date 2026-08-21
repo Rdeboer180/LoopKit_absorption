@@ -348,7 +348,7 @@ struct DelayedSecondWaveDessertAbsorption: CarbAbsorptionComputable {
 // observed ~2.5h peak. Hence a knee curve: peak rate at hours 2-3, then a
 // near-steady ~11-13%/h tail to completion.
 //
-// Designed for 8h entries (the 🥩 quick-pick forces 8h). Knees are
+// Designed for 8h entries (the 🍲 quick-pick forces 8h). Knees are
 // percent-time based, so other durations scale proportionally.
 // Design metrics at 8h: peak rate hours 2-3 (20%/h), t50 ≈ 3h37m,
 // t90 ≈ 7h05m.
@@ -356,10 +356,10 @@ struct DelayedSecondWaveDessertAbsorption: CarbAbsorptionComputable {
 // This model is NOT exposed as a global CarbAbsorptionModel option. It is
 // selected per-entry by `CarbEntry.resolvedAbsorptionModel(default:)` when an
 // entry's `foodType` contains `heavyFoodTypeMarker` — the same mechanism, and
-// deliberately a separate individual case from, the 🌙 dessert curve above.
+// deliberately a separate individual case from, the 🥜 dessert curve above.
 //
 // Revert: delete this struct + the heavy branch in resolvedAbsorptionModel
-// + the 🥩 case in FoodTypeRow + the LongTailHeavyMealAbsorptionTests class.
+// + the 🍲 case in FoodTypeRow + the LongTailHeavyMealAbsorptionTests class.
 struct LongTailHeavyMealAbsorption: CarbAbsorptionComputable {
 
     /// Knees as (percentTime, cumulativePercentAbsorbed). Both monotone non-decreasing.
@@ -430,29 +430,37 @@ struct LongTailHeavyMealAbsorption: CarbAbsorptionComputable {
 // CUSTOM (rdeboer180): per-entry absorption model resolution.
 //
 // `dessertFoodTypeMarker` is the substring written into `CarbEntry.foodType`
-// by the 🌙 icon in FoodTypeRow when tapped. Marker presence triggers the
+// by the 🥜 icon in FoodTypeRow when tapped. Marker presence triggers the
 // dessert curve for that entry only. The global model (Parabolic in this
 // fork) continues to apply to every other entry.
 //
-// `heavyFoodTypeMarker` works identically for the 🥩 icon and the long-tail
-// heavy-meal curve. The two markers are individual cases: FoodTypeRow writes
-// exactly one (it overwrites foodType wholesale), and if both ever appear in
-// a hand-edited label, dessert wins — it is checked first below.
+// `legacyDessertFoodTypeMarker` is the retired 🌙 form of the same marker.
+// Builds before the 🥜 rename wrote it, and entries carrying it can still be
+// on board (or in editable history) when a new build installs — so it keeps
+// resolving to the dessert curve. Never written by the UI any more.
+//
+// `heavyFoodTypeMarker` works identically for the 🍲 icon and the long-tail
+// heavy-meal curve. The markers are individual cases: FoodTypeRow writes
+// exactly one (it overwrites foodType wholesale), and if dessert and heavy
+// ever both appear in a hand-edited label, dessert wins — it is checked
+// first below.
 //
 // We use `contains(...)` so users can append free-text after the marker
-// (e.g. "🌙12h birthday cake") without breaking the trigger.
-public let dessertFoodTypeMarker = "🌙12h"
-public let heavyFoodTypeMarker = "🥩8h"
+// (e.g. "🥜12h birthday cake") without breaking the trigger.
+public let dessertFoodTypeMarker = "🥜12h"
+public let legacyDessertFoodTypeMarker = "🌙12h"
+public let heavyFoodTypeMarker = "🍲8h"
 
 extension CarbEntry {
     // CUSTOM (rdeboer180): swap absorption model for marked entries.
     // Returns the dessert or heavy curve only when foodType contains the
-    // corresponding marker; otherwise returns the caller-provided default
-    // (always settings.absorptionModel today).
+    // corresponding marker (current or legacy); otherwise returns the
+    // caller-provided default (always settings.absorptionModel today).
     // Access: `internal` so CarbStatus's dynamic-absorption pipeline can use it
     // for the direct-model-call branches (no-observation fallback paths).
     func resolvedAbsorptionModel(default defaultModel: CarbAbsorptionComputable) -> CarbAbsorptionComputable {
-        if foodType?.contains(dessertFoodTypeMarker) == true {
+        if foodType?.contains(dessertFoodTypeMarker) == true
+            || foodType?.contains(legacyDessertFoodTypeMarker) == true {
             return DelayedSecondWaveDessertAbsorption()
         }
         if foodType?.contains(heavyFoodTypeMarker) == true {
