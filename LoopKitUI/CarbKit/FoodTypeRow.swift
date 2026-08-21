@@ -72,19 +72,31 @@ public struct FoodTypeRow: View {
                                     // CUSTOM (rdeboer180): force 12h absorption AND write the
                                     // dessert marker into foodType so the math layer swaps in
                                     // DelayedSecondWaveDessertAbsorption for this entry only.
+                                    // Overwriting foodType wholesale also discards any heavy
+                                    // marker, keeping the two curves individual cases.
                                     selectedDefaultAbsorptionTimeEmoji = option.emoji
                                     selectedEmojiIndex = index
                                     absorptionTime = .hours(12)
                                     foodType = dessertFoodTypeMarker
+                                case .heavy:
+                                    // CUSTOM (rdeboer180): force 8h absorption AND write the
+                                    // heavy marker into foodType so the math layer swaps in
+                                    // LongTailHeavyMealAbsorption for this entry only.
+                                    // Overwriting foodType wholesale also discards any dessert
+                                    // marker, keeping the two curves individual cases.
+                                    selectedDefaultAbsorptionTimeEmoji = option.emoji
+                                    selectedEmojiIndex = index
+                                    absorptionTime = .hours(8)
+                                    foodType = heavyFoodTypeMarker
                                 default:
                                     selectedDefaultAbsorptionTimeEmoji = option.emoji
                                     selectedEmojiIndex = index
                                     absorptionTime = orderedAbsorptionTimes[index]
-                                    // CUSTOM (rdeboer180): switching away from the moon icon
-                                    // strips any previously-set dessert marker so the dessert
-                                    // curve does not silently apply to a non-dessert preset.
-                                    if foodType.contains(dessertFoodTypeMarker) {
-                                        foodType = foodType.replacingOccurrences(of: dessertFoodTypeMarker, with: "")
+                                    // CUSTOM (rdeboer180): switching away from the moon/steak
+                                    // icons strips any previously-set curve marker so a custom
+                                    // curve does not silently apply to a non-marked preset.
+                                    for marker in [dessertFoodTypeMarker, heavyFoodTypeMarker] where foodType.contains(marker) {
+                                        foodType = foodType.replacingOccurrences(of: marker, with: "")
                                     }
                                 }
                             }
@@ -125,6 +137,10 @@ fileprivate enum FoodEmojiShortcut {
     case fast(emoji: String)
     case medium(emoji: String)
     case slow(emoji: String)
+    // CUSTOM (rdeboer180): heavy fat/protein plate preset (restaurant meals,
+    // pizza-class food previously entered at 5.5-6.5h). Forces 8h absorption
+    // + heavy-curve marker; see body switch for details.
+    case heavy(emoji: String)
     // CUSTOM (rdeboer180): late-evening high-fat/fiber dessert preset.
     // Forces 12h absorption + dessert-curve marker; see body switch for details.
     case dessert(emoji: String)
@@ -138,6 +154,8 @@ fileprivate enum FoodEmojiShortcut {
             return emoji
         case .slow(emoji: let emoji):
             return emoji
+        case .heavy(emoji: let emoji):
+            return emoji
         case .dessert(emoji: let emoji):
             return emoji
         case .other:
@@ -149,7 +167,10 @@ fileprivate enum FoodEmojiShortcut {
         .fast(emoji: "🍭"),
         .medium(emoji: "🌮"),
         .slow(emoji: "🍕"),
-        // CUSTOM (rdeboer180): 4th preset, placed after slow per user spec.
+        // CUSTOM (rdeboer180): 4th + 5th presets, placed after slow. Heavy
+        // (🥩 8h long-tail) before dessert (🌙 12h second-wave); both are
+        // individual per-entry curve cases resolved by foodType marker.
+        .heavy(emoji: "🥩"),
         .dessert(emoji: "🌙"),
         .other
     ]

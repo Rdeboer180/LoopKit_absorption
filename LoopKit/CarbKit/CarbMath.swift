@@ -334,6 +334,99 @@ struct DelayedSecondWaveDessertAbsorption: CarbAbsorptionComputable {
     }
 }
 
+// MARK: - CUSTOM (rdeboer180): Long-Tail Heavy Meal (8h)
+// Mid-peak, long-tail cumulative-absorption curve for heavy fat/protein plates
+// (restaurant meals, pizza-class food previously entered at 5.5-6.5h).
+//
+// Derivation: LoopStack absorption report (30d) across the 5h/5.5h/6h/6.5h
+// preset cards — observed peak impact 2h10m-2h35m (mid-meal, inside the PL
+// window but at its late edge), observed 90%-done 7h05m-7h48m absolute
+// (1.2-1.3x the entered duration vs the PL model's 0.74x), with steady
+// absorption through the tail rather than PL's linear decay. The shape
+// mismatch cannot be fixed by entering a longer duration alone: stretching
+// PL to move t90 out to ~7h drags its modeled peak window far past the
+// observed ~2.5h peak. Hence a knee curve: peak rate at hours 2-3, then a
+// near-steady ~11-13%/h tail to completion.
+//
+// Designed for 8h entries (the 🥩 quick-pick forces 8h). Knees are
+// percent-time based, so other durations scale proportionally.
+// Design metrics at 8h: peak rate hours 2-3 (20%/h), t50 ≈ 3h37m,
+// t90 ≈ 7h05m.
+//
+// This model is NOT exposed as a global CarbAbsorptionModel option. It is
+// selected per-entry by `CarbEntry.resolvedAbsorptionModel(default:)` when an
+// entry's `foodType` contains `heavyFoodTypeMarker` — the same mechanism, and
+// deliberately a separate individual case from, the 🌙 dessert curve above.
+//
+// Revert: delete this struct + the heavy branch in resolvedAbsorptionModel
+// + the 🥩 case in FoodTypeRow + the LongTailHeavyMealAbsorptionTests class.
+struct LongTailHeavyMealAbsorption: CarbAbsorptionComputable {
+
+    /// Knees as (percentTime, cumulativePercentAbsorbed). Both monotone non-decreasing.
+    fileprivate static let knees: [(t: Double, p: Double)] = [
+        (0.0,       0.00),  // hour 0
+        (1.0 / 8.0, 0.08),  // hour 1
+        (2.0 / 8.0, 0.22),  // hour 2
+        (3.0 / 8.0, 0.42),  // hour 3  <- peak rate segment (hours 2-3)
+        (4.0 / 8.0, 0.55),  // hour 4
+        (5.0 / 8.0, 0.67),  // hour 5
+        (6.0 / 8.0, 0.78),  // hour 6
+        (7.0 / 8.0, 0.89),  // hour 7
+        (1.0,       1.00)   // hour 8
+    ]
+
+    public init() {}
+
+    public func percentAbsorptionAtPercentTime(_ percentTime: Double) -> Double {
+        if percentTime <= 0 { return 0 }
+        if percentTime >= 1 { return 1 }
+        let knees = Self.knees
+        for i in 1..<knees.count {
+            let curr = knees[i]
+            if percentTime <= curr.t {
+                let prev = knees[i - 1]
+                let span = curr.t - prev.t
+                guard span > 0 else { return prev.p }
+                let frac = (percentTime - prev.t) / span
+                return prev.p + frac * (curr.p - prev.p)
+            }
+        }
+        return 1
+    }
+
+    public func percentTimeAtPercentAbsorption(_ percentAbsorption: Double) -> Double {
+        if percentAbsorption <= 0 { return 0 }
+        if percentAbsorption >= 1 { return 1 }
+        let knees = Self.knees
+        for i in 1..<knees.count {
+            let curr = knees[i]
+            if percentAbsorption <= curr.p {
+                let prev = knees[i - 1]
+                let span = curr.p - prev.p
+                guard span > 0 else { return prev.t }
+                let frac = (percentAbsorption - prev.p) / span
+                return prev.t + frac * (curr.t - prev.t)
+            }
+        }
+        return 1
+    }
+
+    public func percentRateAtPercentTime(_ percentTime: Double) -> Double {
+        if percentTime <= 0 || percentTime >= 1 { return 0 }
+        let knees = Self.knees
+        for i in 1..<knees.count {
+            let curr = knees[i]
+            if percentTime < curr.t {
+                let prev = knees[i - 1]
+                let span = curr.t - prev.t
+                guard span > 0 else { return 0 }
+                return (curr.p - prev.p) / span
+            }
+        }
+        return 0
+    }
+}
+
 // CUSTOM (rdeboer180): per-entry absorption model resolution.
 //
 // `dessertFoodTypeMarker` is the substring written into `CarbEntry.foodType`
@@ -341,19 +434,29 @@ struct DelayedSecondWaveDessertAbsorption: CarbAbsorptionComputable {
 // dessert curve for that entry only. The global model (Parabolic in this
 // fork) continues to apply to every other entry.
 //
+// `heavyFoodTypeMarker` works identically for the 🥩 icon and the long-tail
+// heavy-meal curve. The two markers are individual cases: FoodTypeRow writes
+// exactly one (it overwrites foodType wholesale), and if both ever appear in
+// a hand-edited label, dessert wins — it is checked first below.
+//
 // We use `contains(...)` so users can append free-text after the marker
 // (e.g. "🌙12h birthday cake") without breaking the trigger.
 public let dessertFoodTypeMarker = "🌙12h"
+public let heavyFoodTypeMarker = "🥩8h"
 
 extension CarbEntry {
-    // CUSTOM (rdeboer180): swap absorption model for entries marked as dessert.
-    // Returns the dessert curve only when foodType contains the marker; otherwise
-    // returns the caller-provided default (always settings.absorptionModel today).
+    // CUSTOM (rdeboer180): swap absorption model for marked entries.
+    // Returns the dessert or heavy curve only when foodType contains the
+    // corresponding marker; otherwise returns the caller-provided default
+    // (always settings.absorptionModel today).
     // Access: `internal` so CarbStatus's dynamic-absorption pipeline can use it
     // for the direct-model-call branches (no-observation fallback paths).
     func resolvedAbsorptionModel(default defaultModel: CarbAbsorptionComputable) -> CarbAbsorptionComputable {
         if foodType?.contains(dessertFoodTypeMarker) == true {
             return DelayedSecondWaveDessertAbsorption()
+        }
+        if foodType?.contains(heavyFoodTypeMarker) == true {
+            return LongTailHeavyMealAbsorption()
         }
         return defaultModel
     }

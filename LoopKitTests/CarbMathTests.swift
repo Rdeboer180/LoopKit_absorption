@@ -1057,3 +1057,131 @@ private struct StubDessertCarbEntry: CarbEntry {
     var absorptionTime: TimeInterval? = .hours(12)
     var foodType: String?
 }
+
+// MARK: - CUSTOM (rdeboer180): Long-Tail Heavy Meal tests
+// Inlined here so the existing test target picks them up without pbxproj edits.
+// Revert: delete this entire MARK block.
+
+final class LongTailHeavyMealAbsorptionTests: XCTestCase {
+
+    private let model = LongTailHeavyMealAbsorption()
+    private let tolerance = 1e-9
+
+    func testZeroAndOnePercentTimeReturnsExactBounds() {
+        XCTAssertEqual(model.percentAbsorptionAtPercentTime(0.0), 0.0, accuracy: tolerance)
+        XCTAssertEqual(model.percentAbsorptionAtPercentTime(1.0), 1.0, accuracy: tolerance)
+        XCTAssertEqual(model.percentAbsorptionAtPercentTime(-0.1), 0.0, accuracy: tolerance)
+        XCTAssertEqual(model.percentAbsorptionAtPercentTime(1.5), 1.0, accuracy: tolerance)
+    }
+
+    func testCumulativeAtHourBoundariesMatchesObservedMedianSpec() {
+        let expected: [(hour: Double, cumulative: Double)] = [
+            (0, 0.00),
+            (1, 0.08),
+            (2, 0.22),
+            (3, 0.42),
+            (4, 0.55),
+            (5, 0.67),
+            (6, 0.78),
+            (7, 0.89),
+            (8, 1.00)
+        ]
+        for point in expected {
+            let t = point.hour / 8.0
+            XCTAssertEqual(
+                model.percentAbsorptionAtPercentTime(t),
+                point.cumulative,
+                accuracy: tolerance,
+                "Cumulative absorption mismatch at hour \(point.hour)"
+            )
+        }
+    }
+
+    func testPercentAbsorptionIsMonotoneNonDecreasing() {
+        var previous = 0.0
+        for i in 0...1000 {
+            let t = Double(i) / 1000.0
+            let p = model.percentAbsorptionAtPercentTime(t)
+            XCTAssertGreaterThanOrEqual(p, previous - tolerance, "Non-monotone at t=\(t)")
+            previous = p
+        }
+    }
+
+    func testForwardThenInverseIsIdentityOnPercentTimeGrid() {
+        for i in 1...999 {
+            let t = Double(i) / 1000.0
+            let p = model.percentAbsorptionAtPercentTime(t)
+            let tBack = model.percentTimeAtPercentAbsorption(p)
+            XCTAssertEqual(tBack, t, accuracy: 1e-6, "Inverse mismatch at t=\(t)")
+        }
+    }
+
+    func testRateMatchesSegmentSlopeAndIsNonNegative() {
+        let cases: [(t: Double, expectedRate: Double)] = [
+            (0.5 / 8.0, 0.08 / (1.0 / 8.0)),
+            (1.5 / 8.0, 0.14 / (1.0 / 8.0)),
+            (2.5 / 8.0, 0.20 / (1.0 / 8.0)),  // peak
+            (3.5 / 8.0, 0.13 / (1.0 / 8.0)),
+            (4.5 / 8.0, 0.12 / (1.0 / 8.0)),
+            (5.5 / 8.0, 0.11 / (1.0 / 8.0)),
+            (6.5 / 8.0, 0.11 / (1.0 / 8.0)),
+            (7.5 / 8.0, 0.11 / (1.0 / 8.0))
+        ]
+        for c in cases {
+            let r = model.percentRateAtPercentTime(c.t)
+            XCTAssertEqual(r, c.expectedRate, accuracy: tolerance, "Rate at t=\(c.t)")
+            XCTAssertGreaterThanOrEqual(r, 0)
+        }
+        XCTAssertEqual(model.percentRateAtPercentTime(0.0), 0.0, accuracy: tolerance)
+        XCTAssertEqual(model.percentRateAtPercentTime(1.0), 0.0, accuracy: tolerance)
+    }
+
+    func testPeakRateIsInTheTwoToThreeHourWindow() {
+        let peakRate = model.percentRateAtPercentTime(2.5 / 8.0)
+        let elsewhere: [Double] = [0.5, 1.5, 3.5, 4.5, 5.5, 6.5, 7.5].map { $0 / 8.0 }
+        for t in elsewhere {
+            XCTAssertGreaterThan(peakRate, model.percentRateAtPercentTime(t),
+                                 "Rate at hour 2.5 should exceed rate at t=\(t * 8)")
+        }
+    }
+
+    func testDesignMetricsHalfDoneAndNinetyPercentDone() {
+        // t50 = 3/8 + (0.50 - 0.42) / 0.13 * (1/8) ≈ 3h37m at 8h
+        XCTAssertEqual(model.percentTimeAtPercentAbsorption(0.5), 0.451923076923, accuracy: 1e-9)
+        // t90 = 7/8 + (0.90 - 0.89) / 0.11 * (1/8) ≈ 7h05m at 8h
+        XCTAssertEqual(model.percentTimeAtPercentAbsorption(0.9), 0.886363636364, accuracy: 1e-9)
+    }
+
+    func testResolvedAbsorptionModelReturnsHeavyWhenMarkerPresent() {
+        let entry = StubHeavyCarbEntry(foodType: heavyFoodTypeMarker)
+        let resolved = entry.resolvedAbsorptionModel(default: ParabolicAbsorption())
+        XCTAssertTrue(resolved is LongTailHeavyMealAbsorption)
+    }
+
+    func testResolvedAbsorptionModelReturnsHeavyWhenMarkerEmbedded() {
+        let entry = StubHeavyCarbEntry(foodType: "\(heavyFoodTypeMarker) deep dish")
+        let resolved = entry.resolvedAbsorptionModel(default: ParabolicAbsorption())
+        XCTAssertTrue(resolved is LongTailHeavyMealAbsorption)
+    }
+
+    func testResolvedAbsorptionModelReturnsDefaultWithoutMarker() {
+        let entry = StubHeavyCarbEntry(foodType: "steak dinner")
+        let resolved = entry.resolvedAbsorptionModel(default: ParabolicAbsorption())
+        XCTAssertTrue(resolved is ParabolicAbsorption)
+    }
+
+    func testDessertMarkerWinsWhenBothMarkersPresent() {
+        // Only reachable by hand-editing a label; documents the precedence
+        // encoded in resolvedAbsorptionModel (dessert checked first).
+        let entry = StubHeavyCarbEntry(foodType: "\(dessertFoodTypeMarker) \(heavyFoodTypeMarker)")
+        let resolved = entry.resolvedAbsorptionModel(default: ParabolicAbsorption())
+        XCTAssertTrue(resolved is DelayedSecondWaveDessertAbsorption)
+    }
+}
+
+private struct StubHeavyCarbEntry: CarbEntry {
+    var startDate: Date = Date()
+    var quantity: HKQuantity = HKQuantity(unit: .gram(), doubleValue: 50)
+    var absorptionTime: TimeInterval? = .hours(8)
+    var foodType: String?
+}
