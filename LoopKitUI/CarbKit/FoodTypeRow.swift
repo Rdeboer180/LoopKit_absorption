@@ -5,6 +5,17 @@
 //  Created by Noah Brauner on 7/21/23.
 //  Copyright © 2023 LoopKit Authors. All rights reserved.
 //
+//  CUSTOM (rdeboer180): rewritten 2026-10. The row now holds three duration
+//  quick-picks (🍭 2:30, 🌮 4:00, 🍲 6:00 — the fork's defaultAbsorptionTimes)
+//  plus a 🍽️ button that opens the free-text/emoji food field. The former
+//  🍲 8h and 🥜 12h quick-picks that wrote `🍲8h` / `🥜12h` text markers into
+//  foodType are gone: the curve is now chosen by the separate Absorption
+//  Pattern control (Loop's AbsorptionPatternRow → `absorptionPatternIdentifier`),
+//  so renaming a food can no longer drop its curve. Legacy markers are still
+//  honoured for old entries by CarbMath. Revert: restore the upstream file
+//  (git show 4f374060:LoopKitUI/CarbKit/FoodTypeRow.swift) and the
+//  FoodEmojiShortcut cases.
+//
 
 import SwiftUI
 import LoopKit
@@ -16,17 +27,8 @@ public struct FoodTypeRow: View {
     @Binding private var usesCustomFoodType: Bool
     @Binding private var absorptionTimeWasEdited: Bool
     @Binding private var isFocused: Bool
-    
-    private var defaultAbsorptionTimes: CarbStore.DefaultAbsorptionTimes
-    private var orderedAbsorptionTimes: [TimeInterval] {
-        [defaultAbsorptionTimes.fast, defaultAbsorptionTimes.medium, defaultAbsorptionTimes.slow]
-    }
-    
-    private let emojiShortcuts = FoodEmojiShortcut.all
-    
-    @State private var selectedEmojiIndex = 1
-    
-    /// Contains emoji shortcuts, an emoji keyboard, and modifies absorption time to match emoji
+    private let defaultAbsorptionTimes: CarbStore.DefaultAbsorptionTimes
+
     public init(foodType: Binding<String>, absorptionTime: Binding<TimeInterval>, selectedDefaultAbsorptionTimeEmoji: Binding<String>, usesCustomFoodType: Binding<Bool>, absorptionTimeWasEdited: Binding<Bool>, isFocused: Binding<Bool>, defaultAbsorptionTimes: CarbStore.DefaultAbsorptionTimes) {
         self._foodType = foodType
         self._absorptionTime = absorptionTime
@@ -34,147 +36,54 @@ public struct FoodTypeRow: View {
         self._usesCustomFoodType = usesCustomFoodType
         self._absorptionTimeWasEdited = absorptionTimeWasEdited
         self._isFocused = isFocused
-        
         self.defaultAbsorptionTimes = defaultAbsorptionTimes
     }
-    
+
     public var body: some View {
-        HStack {
-            Text("Food Type")
-                .foregroundColor(.primary)
-
-            Spacer()
-
-            if usesCustomFoodType {
-                RowEmojiTextField(text: $foodType, isFocused: $isFocused, emojiType: .food, didSelectItemInSection: didSelectEmojiInSection)
-                    .onTapGesture {
-                        // so that row does not lose focus on cursor move
-                        if !isFocused {
-                            rowTapped()
-                        }
-                    }
-            }
-            else {
-                HStack(spacing: 5) {
-                    ForEach(emojiShortcuts.indices, id: \.self) { index in
-                        let isSelected = index == selectedEmojiIndex
-                        let option = emojiShortcuts[index]
-                        Text(option.emoji)
-                            .font(.title3)
-                            .frame(width: 40, height: 40)
-                            .background(isSelected ? Color.gray.opacity(0.2) : Color.clear)
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .onTapGesture {
-                                switch option {
-                                case .other:
-                                    rowTapped()
-                                case .dessert:
-                                    // CUSTOM (rdeboer180): force 12h absorption AND write the
-                                    // dessert marker into foodType so the math layer swaps in
-                                    // DelayedSecondWaveDessertAbsorption for this entry only.
-                                    // Overwriting foodType wholesale also discards any heavy
-                                    // marker, keeping the two curves individual cases.
-                                    selectedDefaultAbsorptionTimeEmoji = option.emoji
-                                    selectedEmojiIndex = index
-                                    absorptionTime = .hours(12)
-                                    foodType = dessertFoodTypeMarker
-                                case .heavy:
-                                    // CUSTOM (rdeboer180): force 8h absorption AND write the
-                                    // heavy marker into foodType so the math layer swaps in
-                                    // LongTailHeavyMealAbsorption for this entry only.
-                                    // Overwriting foodType wholesale also discards any dessert
-                                    // marker, keeping the two curves individual cases.
-                                    selectedDefaultAbsorptionTimeEmoji = option.emoji
-                                    selectedEmojiIndex = index
-                                    absorptionTime = .hours(8)
-                                    foodType = heavyFoodTypeMarker
-                                default:
-                                    selectedDefaultAbsorptionTimeEmoji = option.emoji
-                                    selectedEmojiIndex = index
-                                    absorptionTime = orderedAbsorptionTimes[index]
-                                    // CUSTOM (rdeboer180): switching away from the peanut/bowl
-                                    // icons strips any previously-set curve marker (legacy 🌙
-                                    // included) so a custom curve does not silently apply to a
-                                    // non-marked preset.
-                                    for marker in [dessertFoodTypeMarker, legacyDessertFoodTypeMarker, heavyFoodTypeMarker] where foodType.contains(marker) {
-                                        foodType = foodType.replacingOccurrences(of: marker, with: "")
-                                    }
-                                }
-                            }
-                    }
+        VStack(alignment: .leading) {
+            HStack {
+                Text("Food Type")
+                    .foregroundColor(.primary)
+                Spacer()
+                if usesCustomFoodType {
+                    RowEmojiTextField(text: $foodType, isFocused: $isFocused, emojiType: .food,
+                                      didSelectItemInSection: { _ in })
                 }
-                .onAppear {
-                    selectedDefaultAbsorptionTimeEmoji = emojiShortcuts[selectedEmojiIndex].emoji
+                Button {
+                    usesCustomFoodType = true
+                    isFocused.toggle()
+                } label: {
+                    Text("🍽️").frame(minWidth: 44, minHeight: 44)
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Edit food description")
+            }
+            HStack {
+                durationButton("🍭", title: "2:30", duration: defaultAbsorptionTimes.fast)
+                durationButton("🌮", title: "4:00", duration: defaultAbsorptionTimes.medium)
+                durationButton("🍲", title: "6:00", duration: defaultAbsorptionTimes.slow)
             }
         }
-        .frame(height: 44)
-        .padding(.vertical, -8)
-        .onTapGesture {
-            rowTapped()
-        }
-    }
-    
-    private func didSelectEmojiInSection(_ section: Int) {
-        // only adjust if it wasn't already edited, food selected was not in other category
-        guard !absorptionTimeWasEdited, section < orderedAbsorptionTimes.count else {
-            return
-        }
-        
-        absorptionTime = orderedAbsorptionTimes[section]
-    }
-    
-    private func rowTapped() {
-        withAnimation {
-            if !isFocused {
-                usesCustomFoodType = true
-            }
-            isFocused.toggle()
-        }
-    }
-}
-
-fileprivate enum FoodEmojiShortcut {
-    case fast(emoji: String)
-    case medium(emoji: String)
-    case slow(emoji: String)
-    // CUSTOM (rdeboer180): heavy fat/protein plate preset (restaurant meals,
-    // pizza-class food previously entered at 5.5-6.5h). Forces 8h absorption
-    // + heavy-curve marker; see body switch for details.
-    case heavy(emoji: String)
-    // CUSTOM (rdeboer180): late-evening high-fat/fiber dessert preset.
-    // Forces 12h absorption + dessert-curve marker; see body switch for details.
-    case dessert(emoji: String)
-    case other
-
-    var emoji: String {
-        switch self {
-        case .fast(emoji: let emoji):
-            return emoji
-        case .medium(emoji: let emoji):
-            return emoji
-        case .slow(emoji: let emoji):
-            return emoji
-        case .heavy(emoji: let emoji):
-            return emoji
-        case .dessert(emoji: let emoji):
-            return emoji
-        case .other:
-            return "🍽️"
-        }
     }
 
-    static let all: [FoodEmojiShortcut] = [
-        .fast(emoji: "🍭"),
-        .medium(emoji: "🌮"),
-        .slow(emoji: "🍕"),
-        // CUSTOM (rdeboer180): 4th + 5th presets, placed after slow. Heavy
-        // (🍲 8h long-tail — the plates previously entered at 5-6h) before
-        // dessert (🥜 12h second-wave, formerly 🌙); both are individual
-        // per-entry curve cases resolved by foodType marker. Vegetarian
-        // icon set per user spec.
-        .heavy(emoji: "🍲"),
-        .dessert(emoji: "🥜"),
-        .other
-    ]
+    /// A quick-pick only sets the duration (and the default emoji used as the
+    /// food text when no custom text is entered). It never touches the
+    /// absorption pattern.
+    private func durationButton(_ emoji: String, title: String, duration: TimeInterval) -> some View {
+        let isSelected = abs(absorptionTime - duration) < 1
+        return Button {
+            absorptionTime = duration
+            absorptionTimeWasEdited = true
+            selectedDefaultAbsorptionTimeEmoji = emoji
+        } label: {
+            Text("\(emoji) \(title)")
+                .font(.footnote)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .background(isSelected ? Color.gray.opacity(0.15) : Color.clear)
+                .cornerRadius(8)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Absorption duration, \(title) hours and minutes")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
 }

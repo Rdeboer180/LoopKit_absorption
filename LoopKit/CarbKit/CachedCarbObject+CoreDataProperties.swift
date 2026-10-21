@@ -19,6 +19,7 @@ extension CachedCarbObject {
     @NSManaged public var primitiveAbsorptionTime: NSNumber?
     @NSManaged public var createdByCurrentApp: Bool
     @NSManaged public var foodType: String?
+    @NSManaged public var absorptionPatternIdentifier: String?  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
     @NSManaged public var grams: Double
     @NSManaged public var startDate: Date
     @NSManaged public var uuid: UUID?
@@ -41,6 +42,7 @@ extension CachedCarbObject: Encodable {
         try container.encodeIfPresent(absorptionTime, forKey: .absorptionTime)
         try container.encode(createdByCurrentApp, forKey: .createdByCurrentApp)
         try container.encodeIfPresent(foodType, forKey: .foodType)
+        try container.encodeIfPresent(absorptionPatternIdentifier, forKey: .absorptionPatternIdentifier)  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         try container.encode(grams, forKey: .grams)
         try container.encode(startDate, forKey: .startDate)
         try container.encodeIfPresent(uuid, forKey: .uuid)
@@ -60,6 +62,7 @@ extension CachedCarbObject: Encodable {
         case absorptionTime
         case createdByCurrentApp
         case foodType
+        case absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         case grams
         case startDate
         case uuid

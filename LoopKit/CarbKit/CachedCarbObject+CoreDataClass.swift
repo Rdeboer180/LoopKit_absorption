@@ -71,6 +71,7 @@ extension CachedCarbObject {
         self.absorptionTime = entry.absorptionTime
         self.createdByCurrentApp = true
         self.foodType = entry.foodType
+        self.absorptionPatternIdentifier = entry.absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         self.grams = entry.quantity.doubleValue(for: .gram())
         self.startDate = entry.startDate
         self.uuid = nil
@@ -93,6 +94,7 @@ extension CachedCarbObject {
         self.absorptionTime = sample.absorptionTime
         self.createdByCurrentApp = sample.createdByCurrentApp
         self.foodType = sample.foodType
+        self.absorptionPatternIdentifier = sample.absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         self.grams = sample.quantity.doubleValue(for: .gram())
         self.startDate = sample.startDate
         self.uuid = sample.uuid
@@ -119,6 +121,7 @@ extension CachedCarbObject {
         self.absorptionTime = entry.absorptionTime
         self.createdByCurrentApp = object.createdByCurrentApp
         self.foodType = entry.foodType
+        self.absorptionPatternIdentifier = entry.absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         self.grams = entry.quantity.doubleValue(for: .gram())
         self.startDate = entry.startDate
         self.uuid = nil
@@ -141,6 +144,7 @@ extension CachedCarbObject {
         self.absorptionTime = sample.absorptionTime
         self.createdByCurrentApp = sample.createdByCurrentApp
         self.foodType = sample.foodType
+        self.absorptionPatternIdentifier = sample.absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         self.grams = sample.quantity.doubleValue(for: .gram())
         self.startDate = sample.startDate
         self.uuid = sample.uuid
@@ -163,6 +167,7 @@ extension CachedCarbObject {
         self.absorptionTime = object.absorptionTime
         self.createdByCurrentApp = object.createdByCurrentApp
         self.foodType = object.foodType
+        self.absorptionPatternIdentifier = object.absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         self.grams = object.grams
         self.startDate = object.startDate
         self.uuid = object.uuid
@@ -188,6 +193,7 @@ extension CachedCarbObject {
         self.absorptionTime = object.absorptionTime
         self.createdByCurrentApp = object.createdByCurrentApp
         self.foodType = object.foodType
+        self.absorptionPatternIdentifier = object.absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         self.grams = object.grams
         self.startDate = object.startDate
         self.uuid = object.uuid
@@ -214,6 +220,7 @@ extension CachedCarbObject {
 
         metadata[HKMetadataKeyFoodType] = foodType
         metadata[MetadataKeyAbsorptionTime] = absorptionTime
+        metadata[MetadataKeyAbsorptionPattern] = absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
 
         metadata[HKMetadataKeySyncIdentifier] = syncIdentifier
         metadata[HKMetadataKeySyncVersion] = syncVersion
@@ -238,6 +245,7 @@ extension CachedCarbObject {
         self.absorptionTime = entry.absorptionTime
         self.createdByCurrentApp = entry.createdByCurrentApp
         self.foodType = entry.foodType
+        self.absorptionPatternIdentifier = entry.absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         self.grams = entry.quantity.doubleValue(for: .gram())
         self.startDate = entry.startDate
         self.uuid = entry.uuid

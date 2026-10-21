@@ -10,11 +10,14 @@ import HealthKit
 
 
 let LegacyMetadataKeyAbsorptionTime = "com.loudnate.CarbKit.HKMetadataKey.AbsorptionTimeMinutes"
+let MetadataKeyAbsorptionPattern = "com.loopkit.CarbKit.AbsorptionPatternIdentifier"  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
 let MetadataKeyAbsorptionTime = "com.loopkit.AbsorptionTime"
 let MetadataKeyUserCreatedDate = "com.loopkit.CarbKit.HKMetadataKey.UserCreatedDate"
 let MetadataKeyUserUpdatedDate = "com.loopkit.CarbKit.HKMetadataKey.UserUpdatedDate"
 
 extension HKQuantitySample {
+    public var absorptionPatternIdentifier: String? { metadata?[MetadataKeyAbsorptionPattern] as? String }  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
+
     public var foodType: String? {
         return metadata?[HKMetadataKeyFoodType] as? String
     }

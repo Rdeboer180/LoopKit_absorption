@@ -18,5 +18,10 @@ public protocol CarbEntry: SampleValue {
     // LoopKit confines foodType to concrete types only.
     // Revert: remove this requirement and the CarbStatus.foodType extension.
     var foodType: String? { get }
+    var absorptionPatternIdentifier: String? { get }  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
 }
 
+
+extension CarbEntry {
+    public var absorptionPatternIdentifier: String? { nil }  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
+}

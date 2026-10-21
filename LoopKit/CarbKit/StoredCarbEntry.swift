@@ -30,6 +30,7 @@ public struct StoredCarbEntry: CarbEntry, Equatable {
 
     public let foodType: String?
     public let absorptionTime: TimeInterval?
+    public let absorptionPatternIdentifier: String?  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
     public let createdByCurrentApp: Bool
 
     // MARK: - User dates
@@ -48,7 +49,8 @@ public struct StoredCarbEntry: CarbEntry, Equatable {
         absorptionTime: TimeInterval? = nil,
         createdByCurrentApp: Bool = true,
         userCreatedDate: Date? = nil,
-        userUpdatedDate: Date? = nil
+        userUpdatedDate: Date? = nil,
+        absorptionPatternIdentifier: String? = nil  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
     ) {
         self.uuid = uuid
         self.provenanceIdentifier = provenanceIdentifier
@@ -58,6 +60,7 @@ public struct StoredCarbEntry: CarbEntry, Equatable {
         self.quantity = quantity
         self.foodType = foodType
         self.absorptionTime = absorptionTime
+        self.absorptionPatternIdentifier = absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         self.createdByCurrentApp = createdByCurrentApp
         self.userCreatedDate = userCreatedDate
         self.userUpdatedDate = userUpdatedDate
@@ -77,7 +80,8 @@ extension StoredCarbEntry {
             absorptionTime: managedObject.absorptionTime,
             createdByCurrentApp: managedObject.createdByCurrentApp,
             userCreatedDate: managedObject.userCreatedDate,
-            userUpdatedDate: managedObject.userUpdatedDate
+            userUpdatedDate: managedObject.userUpdatedDate,
+            absorptionPatternIdentifier: managedObject.absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         )
     }
 }
@@ -96,7 +100,8 @@ extension StoredCarbEntry: Codable {
             absorptionTime: try container.decodeIfPresent(TimeInterval.self, forKey: .absorptionTime),
             createdByCurrentApp: (try container.decodeIfPresent(Bool.self, forKey: .createdByCurrentApp)) ?? true,
             userCreatedDate: try container.decodeIfPresent(Date.self, forKey: .userCreatedDate),
-            userUpdatedDate: try container.decodeIfPresent(Date.self, forKey: .userUpdatedDate)
+            userUpdatedDate: try container.decodeIfPresent(Date.self, forKey: .userUpdatedDate),
+            absorptionPatternIdentifier: try container.decodeIfPresent(String.self, forKey: .absorptionPatternIdentifier)  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         )
     }
     
@@ -112,6 +117,7 @@ extension StoredCarbEntry: Codable {
         try container.encode(quantity.doubleValue(for: .gram()), forKey: .quantity)
         try container.encodeIfPresent(foodType, forKey: .foodType)
         try container.encodeIfPresent(absorptionTime, forKey: .absorptionTime)
+        try container.encodeIfPresent(absorptionPatternIdentifier, forKey: .absorptionPatternIdentifier)  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         if !createdByCurrentApp {
             try container.encode(createdByCurrentApp, forKey: .createdByCurrentApp)
         }
@@ -128,6 +134,7 @@ extension StoredCarbEntry: Codable {
         case quantity
         case foodType
         case absorptionTime
+        case absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         case createdByCurrentApp
         case userCreatedDate
         case userUpdatedDate

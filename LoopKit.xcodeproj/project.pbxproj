@@ -83,6 +83,8 @@
 		4322B772202FA2790002837D /* AbsorbedCarbValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4378B64C1ED61C22000AE785 /* AbsorbedCarbValue.swift */; };
 		4322B773202FA2790002837D /* CarbEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D8FE4A1C7291BD0073BE78 /* CarbEntry.swift */; };
 		4322B774202FA2790002837D /* CarbMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D8FE4B1C7291BD0073BE78 /* CarbMath.swift */; };
+		0D1A00010000000000000002 /* MealTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D1A00010000000000000001 /* MealTools.swift */; };
+		0D1A00010000000000000005 /* DelayedMetabolicResponseAbsorption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D1A00010000000000000004 /* DelayedMetabolicResponseAbsorption.swift */; };
 		4322B775202FA2790002837D /* CarbStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4378B6501ED62D8D000AE785 /* CarbStatus.swift */; };
 		4322B776202FA2790002837D /* CarbStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D8FE4C1C7291BD0073BE78 /* CarbStore.swift */; };
 		4322B777202FA2790002837D /* CarbValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4378B64E1ED61C64000AE785 /* CarbValue.swift */; };
@@ -580,6 +582,8 @@
 		A9E6759122713F4700E25293 /* GlucoseTrend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 432CF86E20D76CCF0066B889 /* GlucoseTrend.swift */; };
 		A9E6759222713F4700E25293 /* PumpManagerStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43FB60E820DCBE64002B996B /* PumpManagerStatus.swift */; };
 		A9E6759322713F4700E25293 /* CarbMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D8FE4B1C7291BD0073BE78 /* CarbMath.swift */; };
+		0D1A00010000000000000003 /* MealTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D1A00010000000000000001 /* MealTools.swift */; };
+		0D1A00010000000000000006 /* DelayedMetabolicResponseAbsorption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D1A00010000000000000004 /* DelayedMetabolicResponseAbsorption.swift */; };
 		A9E6759522713F4700E25293 /* ExponentialInsulinModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1DB55B21F2E964400C483A2 /* ExponentialInsulinModel.swift */; };
 		A9E6759722713F4700E25293 /* DailyQuantitySchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D8FDE71C7290350073BE78 /* DailyQuantitySchedule.swift */; };
 		A9E6759822713F4700E25293 /* CarbRatioSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D8FDE61C7290350073BE78 /* CarbRatioSchedule.swift */; };
@@ -1285,6 +1289,8 @@
 		43D8FE461C7291A60073BE78 /* carbs_on_board_output.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = carbs_on_board_output.json; sourceTree = "<group>"; };
 		43D8FE4A1C7291BD0073BE78 /* CarbEntry.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CarbEntry.swift; sourceTree = "<group>"; };
 		43D8FE4B1C7291BD0073BE78 /* CarbMath.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CarbMath.swift; sourceTree = "<group>"; };
+		0D1A00010000000000000001 /* MealTools.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MealTools.swift; sourceTree = "<group>"; };
+		0D1A00010000000000000004 /* DelayedMetabolicResponseAbsorption.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DelayedMetabolicResponseAbsorption.swift; sourceTree = "<group>"; };
 		43D8FE4C1C7291BD0073BE78 /* CarbStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CarbStore.swift; sourceTree = "<group>"; };
 		43D8FE4D1C7291BD0073BE78 /* HKQuantitySample+CarbKit.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "HKQuantitySample+CarbKit.swift"; sourceTree = "<group>"; };
 		43D8FE4E1C7291BD0073BE78 /* StoredCarbEntry.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoredCarbEntry.swift; sourceTree = "<group>"; };
@@ -1682,6 +1688,7 @@
 		C164A56322F21081000E3FA5 /* MockPumpManagerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPumpManagerState.swift; sourceTree = "<group>"; };
 		C168CA78280DD00F002BD2A7 /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
 		C168CA79280DD00F002BD2A7 /* Modelv4.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Modelv4.xcdatamodel; sourceTree = "<group>"; };
+		0D1A00010000000000000007 /* Modelv5.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Modelv5.xcdatamodel; sourceTree = "<group>"; };
 		C16BC0B42A5FA9D200BDC713 /* DoseMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoseMath.swift; sourceTree = "<group>"; };
 		C16BC0B62A5FAB6E00BDC713 /* DoseMathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoseMathTests.swift; sourceTree = "<group>"; };
 		C16BC0B92A60351900BDC713 /* far_future_high_bg_forecast_after_6_hours.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = far_future_high_bg_forecast_after_6_hours.json; sourceTree = "<group>"; };
@@ -2540,6 +2547,8 @@
 				437AFEEA2036A156008C4892 /* CachedCarbObject+CoreDataProperties.swift */,
 				43D8FE4A1C7291BD0073BE78 /* CarbEntry.swift */,
 				43D8FE4B1C7291BD0073BE78 /* CarbMath.swift */,
+				0D1A00010000000000000004 /* DelayedMetabolicResponseAbsorption.swift */,
+				0D1A00010000000000000001 /* MealTools.swift */,
 				4378B6501ED62D8D000AE785 /* CarbStatus.swift */,
 				43D8FE4C1C7291BD0073BE78 /* CarbStore.swift */,
 				4353D16E203D104F007B4ECD /* CarbStoreError.swift */,
@@ -4105,6 +4114,8 @@
 				432CF86F20D76CCF0066B889 /* GlucoseTrend.swift in Sources */,
 				43FB60E920DCBE64002B996B /* PumpManagerStatus.swift in Sources */,
 				4322B774202FA2790002837D /* CarbMath.swift in Sources */,
+				0D1A00010000000000000002 /* MealTools.swift in Sources */,
+				0D1A00010000000000000005 /* DelayedMetabolicResponseAbsorption.swift in Sources */,
 				4322B78B202FA2B30002837D /* ExponentialInsulinModel.swift in Sources */,
 				E9086B3924B3CB4B0062F5C8 /* TherapySettings.swift in Sources */,
 				89AE222F228BC68000BDFD85 /* DoseProgressTimerEstimator.swift in Sources */,
@@ -4455,6 +4466,8 @@
 				A9E6759122713F4700E25293 /* GlucoseTrend.swift in Sources */,
 				A9E6759222713F4700E25293 /* PumpManagerStatus.swift in Sources */,
 				A9E6759322713F4700E25293 /* CarbMath.swift in Sources */,
+				0D1A00010000000000000003 /* MealTools.swift in Sources */,
+				0D1A00010000000000000006 /* DelayedMetabolicResponseAbsorption.swift in Sources */,
 				A9E6759522713F4700E25293 /* ExponentialInsulinModel.swift in Sources */,
 				B4102D3324ABB0D8005D460B /* DeviceLifecycleProgress.swift in Sources */,
 				C1A85A9C2A1C6E4500430101 /* HealthKitSampleStore.swift in Sources */,
@@ -5475,8 +5488,9 @@
 			children = (
 				C168CA78280DD00F002BD2A7 /* Model.xcdatamodel */,
 				C168CA79280DD00F002BD2A7 /* Modelv4.xcdatamodel */,
+				0D1A00010000000000000007 /* Modelv5.xcdatamodel */,
 			);
-			currentVersion = C168CA79280DD00F002BD2A7 /* Modelv4.xcdatamodel */;
+			currentVersion = 0D1A00010000000000000007 /* Modelv5.xcdatamodel */;
 			path = Model.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

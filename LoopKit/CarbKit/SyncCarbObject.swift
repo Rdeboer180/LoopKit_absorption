@@ -19,6 +19,7 @@ public struct SyncCarbObject: Codable, Equatable {
     public let absorptionTime: TimeInterval?
     public let createdByCurrentApp: Bool
     public let foodType: String?
+    public let absorptionPatternIdentifier: String?  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
     public let grams: Double
     public let startDate: Date
     public let uuid: UUID?
@@ -46,10 +47,12 @@ public struct SyncCarbObject: Codable, Equatable {
                 userDeletedDate: Date?,
                 operation: Operation,
                 addedDate: Date?,
-                supercededDate: Date?) {
+                supercededDate: Date?,
+                absorptionPatternIdentifier: String? = nil) {  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         self.absorptionTime = absorptionTime
         self.createdByCurrentApp = createdByCurrentApp
         self.foodType = foodType
+        self.absorptionPatternIdentifier = absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         self.grams = grams
         self.startDate = startDate
         self.uuid = uuid
@@ -83,6 +86,7 @@ extension SyncCarbObject {
                   userDeletedDate: managedObject.userDeletedDate,
                   operation: managedObject.operation,
                   addedDate: managedObject.addedDate,
-                  supercededDate: managedObject.supercededDate)
+                  supercededDate: managedObject.supercededDate,
+                  absorptionPatternIdentifier: managedObject.absorptionPatternIdentifier)  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
     }
 }

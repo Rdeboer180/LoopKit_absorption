@@ -429,8 +429,14 @@ struct LongTailHeavyMealAbsorption: CarbAbsorptionComputable {
 
 // CUSTOM (rdeboer180): per-entry absorption model resolution.
 //
-// `dessertFoodTypeMarker` is the substring written into `CarbEntry.foodType`
-// by the 🥜 icon in FoodTypeRow when tapped. Marker presence triggers the
+// Since the absorption-pattern field (`MealAbsorptionPattern`, 2026-10) the
+// text markers below are LEGACY ONLY: FoodTypeRow no longer writes them, and
+// they are consulted only for entries whose `absorptionPatternIdentifier` is
+// nil (history, old favorites, Watch and remote entries). Keep them while such
+// entries can exist.
+//
+// `dessertFoodTypeMarker` was the substring written into `CarbEntry.foodType`
+// by the former 🥜 icon in FoodTypeRow. Marker presence triggers the
 // dessert curve for that entry only. The global model (Parabolic in this
 // fork) continues to apply to every other entry.
 //
@@ -459,6 +465,24 @@ extension CarbEntry {
     // Access: `internal` so CarbStatus's dynamic-absorption pipeline can use it
     // for the direct-model-call branches (no-observation fallback paths).
     func resolvedAbsorptionModel(default defaultModel: CarbAbsorptionComputable) -> CarbAbsorptionComputable {
+        // CUSTOM (rdeboer180): an explicit per-entry pattern identifier wins over
+        // any text marker. Entries made with the 🥜 pattern control get the
+        // delayed-metabolic curve; "standard" pins the global model even if the
+        // food text happens to contain a legacy marker; an identifier this build
+        // does not know (written by a newer build) falls back to the global
+        // model rather than guessing a curve. Only `nil` (entries, favorites and
+        // Watch/remote entries written without a pattern) reaches the legacy
+        // marker path below. Revert: delete this switch.
+        switch absorptionPatternIdentifier {
+        case MealAbsorptionPattern.delayedMetabolicV1?:
+            return DelayedMetabolicResponseAbsorption()
+        case MealAbsorptionPattern.standard?:
+            return defaultModel
+        case .some:
+            return defaultModel
+        case nil:
+            break
+        }
         if foodType?.contains(dessertFoodTypeMarker) == true
             || foodType?.contains(legacyDessertFoodTypeMarker) == true {
             return DelayedSecondWaveDessertAbsorption()

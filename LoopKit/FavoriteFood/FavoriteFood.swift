@@ -12,6 +12,7 @@ public protocol FavoriteFood {
     var name: String { get }
     var carbsQuantity: HKQuantity { get }
     var foodType: String { get }
+    var absorptionPatternIdentifier: String? { get }  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
     var absorptionTime: TimeInterval { get }
 }
 

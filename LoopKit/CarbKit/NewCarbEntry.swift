@@ -18,13 +18,15 @@ public struct NewCarbEntry: CarbEntry, Equatable, RawRepresentable {
     public let startDate: Date
     public let foodType: String?
     public let absorptionTime: TimeInterval?
+    public let absorptionPatternIdentifier: String?  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
 
-    public init(date: Date = Date(), quantity: HKQuantity, startDate: Date, foodType: String?, absorptionTime: TimeInterval?) {
+    public init(date: Date = Date(), quantity: HKQuantity, startDate: Date, foodType: String?, absorptionTime: TimeInterval?, absorptionPatternIdentifier: String? = nil) {  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         self.date = date
         self.quantity = quantity
         self.startDate = startDate
         self.foodType = foodType
         self.absorptionTime = absorptionTime
+        self.absorptionPatternIdentifier = absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
     }
 
     public init?(rawValue: RawValue) {
@@ -41,7 +43,8 @@ public struct NewCarbEntry: CarbEntry, Equatable, RawRepresentable {
             quantity: HKQuantity(unit: .gram(), doubleValue: grams),
             startDate: startDate,
             foodType: rawValue["foodType"] as? String,
-            absorptionTime: rawValue["absorptionTime"] as? TimeInterval
+            absorptionTime: rawValue["absorptionTime"] as? TimeInterval,
+            absorptionPatternIdentifier: rawValue["absorptionPatternIdentifier"] as? String  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
         )
     }
 
@@ -54,6 +57,7 @@ public struct NewCarbEntry: CarbEntry, Equatable, RawRepresentable {
 
         rawValue["foodType"] = foodType
         rawValue["absorptionTime"] = absorptionTime
+        rawValue["absorptionPatternIdentifier"] = absorptionPatternIdentifier  // CUSTOM (rdeboer180): per-entry absorption pattern; revert by removing this field end-to-end
 
         return rawValue
     }

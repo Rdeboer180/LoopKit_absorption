@@ -38,8 +38,12 @@ extension CarbStatus: CarbEntry {
         return absorption?.estimatedDate.duration ?? entry.absorptionTime
     }
 
-    // CUSTOM (rdeboer180): delegate to wrapped entry so the dessert-model marker
-    // travels through the dynamic-absorption pipeline.
+    // CUSTOM (rdeboer180): delegate to the wrapped entry so both the absorption
+    // pattern identifier and the legacy dessert/heavy text markers travel
+    // through the dynamic-absorption pipeline (resolvedAbsorptionModel reads
+    // them from `self` in several CarbStatus paths).
+    public var absorptionPatternIdentifier: String? { entry.absorptionPatternIdentifier }
+
     public var foodType: String? {
         return entry.foodType
     }
