@@ -182,10 +182,29 @@ public struct RecurringPresetReminder: Codable, Equatable, Identifiable {
     public var hour: Int
     public var minute: Int
     public var enabled: Bool
+    /// CUSTOM (rdeboer180): start the preset at the scheduled time instead of only
+    /// asking for a review. Defaults to true, including for reminders saved before
+    /// this field existed. Revert: delete this property and its decoding line.
+    public var startsAutomatically: Bool
 
-    public init(id: UUID = UUID(), presetID: UUID, weekdays: Set<Int>, hour: Int, minute: Int, enabled: Bool = true) {
+    public init(id: UUID = UUID(), presetID: UUID, weekdays: Set<Int>, hour: Int, minute: Int, enabled: Bool = true, startsAutomatically: Bool = true) {
         self.id = id; self.presetID = presetID; self.weekdays = weekdays
         self.hour = hour; self.minute = minute; self.enabled = enabled
+        self.startsAutomatically = startsAutomatically
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, presetID, weekdays, hour, minute, enabled, startsAutomatically }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        presetID = try c.decode(UUID.self, forKey: .presetID)
+        weekdays = try c.decode(Set<Int>.self, forKey: .weekdays)
+        hour = try c.decode(Int.self, forKey: .hour)
+        minute = try c.decode(Int.self, forKey: .minute)
+        enabled = try c.decode(Bool.self, forKey: .enabled)
+        // CUSTOM (rdeboer180): reminders saved by earlier builds start automatically.
+        startsAutomatically = try c.decodeIfPresent(Bool.self, forKey: .startsAutomatically) ?? true
     }
 
     public var isValid: Bool {
@@ -199,5 +218,21 @@ public struct RecurringPresetReminder: Codable, Equatable, Identifiable {
             var c = DateComponents(); c.weekday = day; c.hour = hour; c.minute = minute
             return c
         }
+    }
+
+    /// CUSTOM (rdeboer180): the most recent scheduled time at or before `date`, in
+    /// local wall time, or nil when the reminder is off or invalid. A time that a
+    /// DST change skips moves to the next valid time, as the calendar does.
+    public func latestOccurrence(atOrBefore date: Date, calendar: Calendar = .current) -> Date? {
+        guard enabled, isValid else { return nil }
+        let today = calendar.startOfDay(for: date)
+        for offset in 0...7 {
+            guard let day = calendar.date(byAdding: .day, value: -offset, to: today),
+                  weekdays.contains(calendar.component(.weekday, from: day)),
+                  let time = calendar.date(bySettingHour: hour, minute: minute, second: 0, of: day),
+                  time <= date else { continue }
+            return time
+        }
+        return nil
     }
 }
