@@ -36,26 +36,17 @@ public enum MealAbsorptionPattern {
 /// the curve's peak-rate segment), so the entry screen cannot describe a
 /// different curve than the one Loop will run.
 public struct DelayedMetabolicResponsePreview {
-    public static let sampleCount = DelayedMetabolicResponseData.observedLateRiseMidpointHours.count
+    public static let sampleCount = DelayedMetabolicResponseData.nightCount
     public static let referenceDuration: TimeInterval = DelayedMetabolicResponseData.referenceDurationHours * 3600
-    public static let observedMidpoints = DelayedMetabolicResponseData.observedLateRiseMidpointHours
-    public static let averageFraction = DelayedMetabolicResponseData.averageFraction
-    public static let observedFractionRange = DelayedMetabolicResponseData.earliestFraction...DelayedMetabolicResponseData.latestFraction
 
     public init() {}
 
-    /// Mean observed late-rise midpoint, scaled to the selected duration.
-    public func averageLateResponse(after duration: TimeInterval) -> TimeInterval {
-        max(0, duration) * Self.averageFraction
+    /// When the curve reaches a cumulative share, scaled to the selected duration.
+    public func absorbed(_ share: Double, after duration: TimeInterval) -> TimeInterval {
+        max(0, duration) * DelayedMetabolicResponseAbsorption().percentTimeAtPercentAbsorption(share)
     }
 
-    /// Earliest…latest observed late-rise midpoint, scaled to the selected duration.
-    public func observedTimingRange(after duration: TimeInterval) -> ClosedRange<TimeInterval> {
-        let duration = max(0, duration)
-        return (duration * Self.observedFractionRange.lowerBound)...(duration * Self.observedFractionRange.upperBound)
-    }
-
-    /// The curve's peak-rate window (the hours Loop models the fastest absorption), scaled to the selected duration.
+    /// The curve's fastest segment (the hours Loop models the fastest absorption), scaled to the selected duration.
     public func peakAbsorptionWindow(after duration: TimeInterval) -> ClosedRange<TimeInterval> {
         let duration = max(0, duration)
         let window = DelayedMetabolicResponseAbsorption.peakRateWindow
